@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload and Download Processed Files</title>
+</head>
+<body>
+<h1>Upload and Download Processed Files</h1>
+<form id="uploadForm" action="http://127.0.0.1:9001/api2/upload" method="post" enctype="multipart/form-data">
+    <label for="files">Choose .doc or .docx files:</label>
+    <input type="file" id="files" name="files" accept=".doc,.docx" multiple>
+    <br><br>
+    <input type="submit" value="Upload Files">
+</form>
+
+<h1>Processed Files</h1>
+<div id="fileLinks"></div>
+
+<script>
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // 阻止表单的默认提交行为
+
+    const formData = new FormData(this);
+
+    fetch('http://127.0.0.1:9001/api2/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            data.files.forEach(file => {
+                fetch(file.downloadUrl)
+                    .then(response => response.blob()) // 将响应转换为 Blob 对象
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob); // 创建一个 Blob URL
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = file.originalName; // 指定下载文件名
+                        document.body.appendChild(a);
+                        a.click(); // 自动点击链接以启动下载
+                        document.body.removeChild(a); // 下载后移除链接
+                        window.URL.revokeObjectURL(url); // 释放 Blob URL
+                    });
+            });
+        } else {
+            const p = document.createElement('p');
+            p.textContent = 'An error occurred: ' + data.message;
+            document.getElementById('fileLinks').appendChild(p);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        const p = document.createElement('p');
+        p.textContent = 'An error occurred during the upload.';
+        document.getElementById('fileLinks').appendChild(p);
+    });
+});
+
+</script>
+</body>
+</html>
