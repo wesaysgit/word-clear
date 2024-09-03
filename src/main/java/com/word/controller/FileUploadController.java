@@ -1,8 +1,12 @@
 package com.word.controller;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson2.JSON;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.model.SEPX;
+import org.apache.poi.hwpf.model.SectionTable;
 import org.apache.poi.hwpf.usermodel.HeaderStories;
 import org.apache.poi.hwpf.usermodel.Range;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -23,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -34,9 +39,12 @@ import java.util.zip.ZipOutputStream;
 public class FileUploadController {
 
     @PostMapping("/upload")
-    public ResponseEntity<byte[]> handleFileUpload(@RequestParam("files") MultipartFile[] files) {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             ZipOutputStream zipOut = new ZipOutputStream(baos)) {
+    public void handleFileUpload(@RequestParam("files") MultipartFile[] files, HttpServletResponse response) {
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=\"files.zip\"");
+
+        try (
+             ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
 
             for (MultipartFile file : files) {
                 if (file.isEmpty()) continue;
@@ -46,21 +54,13 @@ public class FileUploadController {
                     if (fileName != null && fileName.endsWith(".docx")) {
                         processDocxFile(bais, zipOut, fileName);
                     } else if (fileName != null && fileName.endsWith(".doc")) {
-                        processDocFile(bais, zipOut, fileName);
+                        processDocFile(file.getInputStream(), zipOut, fileName);
                     }
                 }
             }
 
-            zipOut.finish();
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=modified-files.zip");
-            headers.add(HttpHeaders.CONTENT_TYPE, "application/zip");
-
-            return new ResponseEntity<>(baos.toByteArray(), headers, HttpStatus.OK);
         } catch (Exception e) {
             log.error("", e);
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -90,17 +90,17 @@ public class FileUploadController {
     private void processDocFile(ByteArrayInputStream bais, ZipOutputStream zipOut, String fileName) throws IOException {
         try (HWPFDocument document = new HWPFDocument(bais);) {
             // 获取所有页眉
-            HeaderStories headerStories = new HeaderStories(document);
+//            HeaderStories headerStories = new HeaderStories(document);
 
-            // 清除所有页眉内容
-            clearHeader(headerStories.getFirstHeaderSubrange()); // 清除首页页眉
-            clearHeader(headerStories.getOddHeaderSubrange()); // 清除奇数页页眉
-            clearHeader(headerStories.getEvenHeaderSubrange()); // 清除偶数页页眉
-
-            // 清除所有页眉内容
-            clearHeader(headerStories.getFirstFooterSubrange()); // 清除首页页眉
-            clearHeader(headerStories.getOddFooterSubrange()); // 清除奇数页页眉
-            clearHeader(headerStories.getEvenFooterSubrange()); // 清除偶数页页眉
+//            // 清除所有页眉内容
+//            clearHeader(headerStories.getFirstHeaderSubrange()); // 清除首页页眉
+//            clearHeader(headerStories.getOddHeaderSubrange()); // 清除奇数页页眉
+//            clearHeader(headerStories.getEvenHeaderSubrange()); // 清除偶数页页眉
+//
+//            // 清除所有页眉内容
+//            clearHeader(headerStories.getFirstFooterSubrange()); // 清除首页页眉
+//            clearHeader(headerStories.getOddFooterSubrange()); // 清除奇数页页眉
+//            clearHeader(headerStories.getEvenFooterSubrange()); // 清除偶数页页眉
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
@@ -114,13 +114,28 @@ public class FileUploadController {
         }
     }
 
+    private void processDocFile(InputStream inputStream, ZipOutputStream zipOut, String fileName) throws IOException {
+        try (HWPFDocument document = new HWPFDocument(inputStream);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            document.write(baos);
+
+            ZipEntry zipEntry = new ZipEntry(fileName);
+            zipOut.putNextEntry(zipEntry);
+            zipOut.write(baos.toByteArray());
+            zipOut.closeEntry();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void clearHeader(Range range) {
         if (range != null) {
             String text = range.text();
             if (StrUtil.isNotEmpty(text)) {
                 range.replaceText(text, ""); // 清除页眉内容
             }
-            System.out.println("清除页眉内容");
         }
     }
 

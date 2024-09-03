@@ -7,15 +7,12 @@
 </head>
 <body>
 <h1>Upload and Download Processed Files</h1>
-<form id="uploadForm" action="http://127.0.0.1:9001/api/upload" method="post" enctype="multipart/form-data">
+<form id="uploadForm" action="http://localhost:8080/api2/upload" method="post" enctype="multipart/form-data">
     <label for="files">Choose .doc or .docx files:</label>
     <input type="file" id="files" name="files" accept=".doc,.docx" multiple>
     <br><br>
     <input type="submit" value="Upload Files">
 </form>
-
-<h1>Processed Files</h1>
-<div id="fileLinks"></div>
 
 <script>
     document.getElementById('uploadForm').addEventListener('submit', function(event) {
@@ -23,30 +20,20 @@
 
         const formData = new FormData(this);
 
-        fetch('http://127.0.0.1:9001/api/upload', {
+        fetch('/api2/upload', {
             method: 'POST',
             body: formData
         })
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
-                } else {
-                    throw new Error('Network response was not ok.');
-                }
-            })
+            .then(response => response.blob())
             .then(blob => {
-                const url = window.URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'files.zip'; // 文件名可以设置为你需要的名称
-                document.body.appendChild(a);
+                a.download = 'processed_files.zip';
                 a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
+                URL.revokeObjectURL(url);
             })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+            .catch(error => console.error('Error:', error));
     });
 </script>
 </body>
