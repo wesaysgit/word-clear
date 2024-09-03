@@ -7,7 +7,7 @@
 </head>
 <body>
 <h1>Upload and Download Processed Files</h1>
-<form id="uploadForm" action="http://127.0.0.1:9001/api/upload" method="post" enctype="multipart/form-data">
+<form id="uploadForm" action="http://81.71.50.49:9001/api/upload" method="post" enctype="multipart/form-data">
     <label for="files">Choose .doc or .docx files:</label>
     <input type="file" id="files" name="files" accept=".doc,.docx" multiple>
     <br><br>
@@ -23,7 +23,7 @@
 
         const formData = new FormData(this);
 
-        fetch('http://127.0.0.1:9001/api/upload', {
+        fetch('http://81.71.50.49:9001/api/upload', {
             method: 'POST',
             body: formData
         })

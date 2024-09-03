@@ -8,7 +8,9 @@ import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.model.SEPX;
 import org.apache.poi.hwpf.model.SectionTable;
 import org.apache.poi.hwpf.usermodel.HeaderStories;
+import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Range;
+import org.apache.poi.hwpf.usermodel.Section;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.drawingml.x2006.picture.CTPicture;
@@ -40,38 +42,34 @@ public class FileUploadController {
 
     @PostMapping("/upload")
     public void handleFileUpload(@RequestParam("files") MultipartFile[] files, HttpServletResponse response) {
-        response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=\"files.zip\"");
+        try {
+            // 设置下载的 ZIP 文件名和响应头
+            String zipFileName = "processed_docs.zip";
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + zipFileName + "\"");
 
-        try (
-             ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
+            // 创建 ZIP 输出流
+            try (ZipOutputStream zipOut = new ZipOutputStream(response.getOutputStream())) {
+                for (MultipartFile file : files) {
+                    String originalFileName = file.getOriginalFilename();
+                    if (originalFileName == null) continue;
 
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-
-                String fileName = file.getOriginalFilename();
-                try (ByteArrayInputStream bais = new ByteArrayInputStream(file.getBytes())) {
-                    if (fileName != null && fileName.endsWith(".docx")) {
-                        processDocxFile(bais, zipOut, fileName);
-                    } else if (fileName != null && fileName.endsWith(".doc")) {
-                        processDocFile(file.getInputStream(), zipOut, fileName);
+                    // 根据文件扩展名选择处理方法
+                    if (originalFileName.endsWith(".doc")) {
+                        processDocFile(file.getInputStream(), zipOut, originalFileName);
+                    } else if (originalFileName.endsWith(".docx")) {
+                        processDocxFile(file.getInputStream(), zipOut, originalFileName);
                     }
                 }
             }
-
         } catch (Exception e) {
             log.error("", e);
         }
     }
 
-    private void processDocxFile(ByteArrayInputStream bais, ZipOutputStream zipOut, String fileName) throws IOException {
-
+    private void processDocxFile(InputStream bais, ZipOutputStream zipOut, String fileName) throws IOException {
         try (XWPFDocument document = new XWPFDocument(bais)) {
-            // Modify document (for demonstration purposes)
-//            List<XWPFHeader> headerList = document.getHeaderList();
-//            for (XWPFHeader xwpfHeader : headerList) {
-//                xwpfHeader.clearHeaderFooter();
-//            }
+
             document.getHeaderList().forEach(XWPFHeader::clearHeaderFooter);
             document.getFooterList().forEach(XWPFFooter::clearHeaderFooter);
 
@@ -114,29 +112,58 @@ public class FileUploadController {
         }
     }
 
+    // 处理 .doc 文件
     private void processDocFile(InputStream inputStream, ZipOutputStream zipOut, String fileName) throws IOException {
-        try (HWPFDocument document = new HWPFDocument(inputStream);
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (HWPFDocument document = new HWPFDocument(inputStream)) {
+            removeHeadersAndFooters(document);
 
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
 
+            // 添加到 ZIP 文件
             ZipEntry zipEntry = new ZipEntry(fileName);
             zipOut.putNextEntry(zipEntry);
             zipOut.write(baos.toByteArray());
             zipOut.closeEntry();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
         }
     }
+    // 去除 .doc 文件的页眉和页脚
+    private void removeHeadersAndFooters(HWPFDocument document) {
+        HeaderStories headerStories = new HeaderStories(document);
 
-    private static void clearHeader(Range range) {
+        // 清除首页页眉
+        clearHeaderOrFooter(headerStories.getFirstHeaderSubrange());
+
+        // 清除奇数页页眉
+        clearHeaderOrFooter(headerStories.getOddHeaderSubrange());
+
+        // 清除偶数页页眉
+        clearHeaderOrFooter(headerStories.getEvenHeaderSubrange());
+
+        // 清除首页页脚
+        clearHeaderOrFooter(headerStories.getFirstFooterSubrange());
+
+        // 清除奇数页页脚
+        clearHeaderOrFooter(headerStories.getOddFooterSubrange());
+
+        // 清除偶数页页脚
+        clearHeaderOrFooter(headerStories.getEvenFooterSubrange());
+    }
+
+    private void clearHeaderOrFooter(Range range) {
         if (range != null) {
-            String text = range.text();
-            if (StrUtil.isNotEmpty(text)) {
-                range.replaceText(text, ""); // 清除页眉内容
+            // 遍历段落
+            for (int i = 0; i < range.numParagraphs(); i++) {
+                Paragraph paragraph = range.getParagraph(i);
+                // 找到段落中所有图片的标识符，并删除它们
+                for (int j = 0; j < paragraph.numCharacterRuns(); j++) {
+                    String text = paragraph.getCharacterRun(j).text();
+                    paragraph.replaceText(text, "", text.length());
+                }
             }
         }
     }
+
+
 
 }
