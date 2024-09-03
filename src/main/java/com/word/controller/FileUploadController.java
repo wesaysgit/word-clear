@@ -7,6 +7,10 @@ import org.apache.poi.hwpf.usermodel.HeaderStories;
 import org.apache.poi.hwpf.usermodel.Range;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.xwpf.usermodel.*;
+import org.openxmlformats.schemas.drawingml.x2006.picture.CTPicture;
+import org.openxmlformats.schemas.drawingml.x2006.wordprocessingDrawing.CTInline;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDrawing;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,31 +74,8 @@ public class FileUploadController {
 //            }
             document.getHeaderList().forEach(XWPFHeader::clearHeaderFooter);
             document.getFooterList().forEach(XWPFFooter::clearHeaderFooter);
-            // 获取所有图片数据
-            // 获取所有图片数据
-            List<XWPFPictureData> pictures = document.getAllPictures();
 
-            if (!pictures.isEmpty()) {
-                // 获取最后一张图片
-                XWPFPictureData lastPicture = pictures.get(pictures.size() - 1);
-
-                // 遍历文档中的段落
-                for (XWPFParagraph paragraph : document.getParagraphs()) {
-                    List<XWPFRun> runs = paragraph.getRuns();
-                    if (runs != null) {
-                        for (XWPFRun run : runs) {
-                            // 检查并移除图片
-                            removePictureFromRun(run, lastPicture);
-                        }
-                    }
-                }
-
-                // 移除图片数据
-                document.getPackage().getParts().remove(lastPicture.getPackagePart());
-
-            }
-
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
 
             ZipEntry zipEntry = new ZipEntry(fileName);

@@ -6,17 +6,17 @@
     <title>Upload Files</title>
 </head>
 <body>
-<h1>Upload DOC or DOCX Files</h1>
+<h1>Upload DOCX Files</h1>
 <form id="uploadForm" enctype="multipart/form-data">
-    <input type="file" id="files" name="files" multiple accept=".doc,.docx" />
+<!--    <input type="file" id="files" name="files" multiple accept=".doc,.docx" />-->
+    <input type="file" id="files" name="files" multiple accept=".docx" />
     <button type="button" onclick="uploadFiles()">Upload</button>
 </form>
 
 <script>
     function uploadFiles() {
         const formData = new FormData(document.getElementById('uploadForm'));
-
-        fetch('http://127.0.0.1:9001/api/upload', {
+        fetch('http://81.71.50.49:9001/api/upload', {
             method: 'POST',
             body: formData
         })
