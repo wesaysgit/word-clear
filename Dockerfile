@@ -8,4 +8,4 @@ COPY ./target/word-clear-0.0.1-SNAPSHOT.jar /app/app.jar
 WORKDIR /app
 
 # 运行 JAR 包
-ENTRYPOINT ["java", "-jar", "word-clear-0.0.1-SNAPSHOT"]
+ENTRYPOINT ["java", "-jar", "word-clear-0.0.1-SNAPSHOT.jar"]
