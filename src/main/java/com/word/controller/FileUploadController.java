@@ -6,9 +6,7 @@ import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.usermodel.HeaderStories;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Range;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFFooter;
-import org.apache.poi.xwpf.usermodel.XWPFHeader;
+import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -58,6 +57,29 @@ public class FileUploadController {
 
             document.getHeaderList().forEach(XWPFHeader::clearHeaderFooter);
             document.getFooterList().forEach(XWPFFooter::clearHeaderFooter);
+            // 遍历文档中的段落
+            List<XWPFParagraph> paragraphs = document.getParagraphs();
+            boolean imageFound = false;
+
+            // 从后往前遍历段落，查找最后一张图片
+            for (int i = paragraphs.size() - 1; i >= 0 && !imageFound; i--) {
+                XWPFParagraph paragraph = paragraphs.get(i);
+                List<XWPFRun> runs = paragraph.getRuns();
+
+                for (int j = runs.size() - 1; j >= 0 && !imageFound; j--) {
+                    XWPFRun run = runs.get(j);
+                    List<XWPFPicture> pictures = run.getEmbeddedPictures();
+
+                    if (!pictures.isEmpty()) {
+                        paragraph.removeRun(j);  // 移除图片所在的 run
+                        // 检查该段落是否还有其他内容
+                        if (paragraph.getRuns().isEmpty()) {
+                            paragraphs.remove(i);  // 如果段落已空，移除整个段落
+                        }
+                        imageFound = true;
+                    }
+                }
+            }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
