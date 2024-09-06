@@ -3,6 +3,7 @@ package com.word.controller;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.model.PAPBinTable;
 import org.apache.poi.hwpf.usermodel.HeaderStories;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Range;
@@ -59,27 +60,34 @@ public class FileUploadController {
             document.getFooterList().forEach(XWPFFooter::clearHeaderFooter);
             // 遍历文档中的段落
             List<XWPFParagraph> paragraphs = document.getParagraphs();
-            boolean imageFound = false;
-
-            // 从后往前遍历段落，查找最后一张图片
-            for (int i = paragraphs.size() - 1; i >= 0 && !imageFound; i--) {
-                XWPFParagraph paragraph = paragraphs.get(i);
-                List<XWPFRun> runs = paragraph.getRuns();
-
-                for (int j = runs.size() - 1; j >= 0 && !imageFound; j--) {
-                    XWPFRun run = runs.get(j);
-                    List<XWPFPicture> pictures = run.getEmbeddedPictures();
-
-                    if (!pictures.isEmpty()) {
-                        paragraph.removeRun(j);  // 移除图片所在的 run
-                        // 检查该段落是否还有其他内容
-                        if (paragraph.getRuns().isEmpty()) {
-                            paragraphs.remove(i);  // 如果段落已空，移除整个段落
-                        }
-                        imageFound = true;
-                    }
-                }
+            int posId = paragraphs.size() - 1;
+//            document.removeBodyElement(posId);
+            if (!paragraphs.isEmpty()) {
+                XWPFParagraph paragraphToRemove = paragraphs.get(posId);
+                int elementPos = document.getPosOfParagraph(paragraphToRemove);
+                document.removeBodyElement(elementPos);
             }
+
+//            boolean imageFound = false;
+            // 从后往前遍历段落，查找最后一张图片
+//            for (int i = paragraphs.size() - 1; i >= 0 && !imageFound; i--) {
+//                XWPFParagraph paragraph = paragraphs.get(i);
+//                List<XWPFRun> runs = paragraph.getRuns();
+//
+//                for (int j = runs.size() - 1; j >= 0 && !imageFound; j--) {
+//                    XWPFRun run = runs.get(j);
+//                    List<XWPFPicture> pictures = run.getEmbeddedPictures();
+//
+//                    if (!pictures.isEmpty()) {
+//                        paragraph.removeRun(j);  // 移除图片所在的 run
+//                        // 检查该段落是否还有其他内容
+//                        if (paragraph.getRuns().isEmpty()) {
+//                            paragraphs.remove(i);  // 如果段落已空，移除整个段落
+//                        }
+//                        imageFound = true;
+//                    }
+//                }
+//            }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
