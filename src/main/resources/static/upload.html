@@ -4,18 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload and Download Processed Files</title>
+    <style>
+        /* 带有图案的背景 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #a2d2ff),
+            url('https://www.transparenttextures.com/patterns/white-wall.png');
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 容器样式 */
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        /* 标题样式 */
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* 表单样式 */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        }
+
+        label {
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 文件选择按钮样式 */
+        input[type="file"] {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="file"]:hover {
+            border-color: #a2d2ff;
+        }
+
+        /* 提交按钮样式 */
+        input[type="submit"] {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #4CAF50, #2e7d32);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="submit"]:hover {
+            background: linear-gradient(135deg, #2e7d32, #4CAF50);
+        }
+
+        /* 文件链接样式 */
+        #fileLinks {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 图标样式 */
+        .icon {
+            margin-right: 8px;
+            font-size: 20px;
+            color: #4CAF50;
+        }
+
+        /* 上传区的过渡效果 */
+        form:hover input[type="file"] {
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body>
-<h1>Upload and Download Processed Files</h1>
-<form id="uploadForm" action="http://81.71.50.49:9001/api/upload" method="post" enctype="multipart/form-data">
-    <label for="files">Choose .doc or .docx files:</label>
-    <input type="file" id="files" name="files" accept=".doc,.docx" multiple>
-    <br><br>
-    <input type="submit" value="Upload Files">
-</form>
+<div class="container">
+    <h1>Upload and Download Processed Files</h1>
+    <form id="uploadForm" action="http://81.71.50.49:9001/api/upload" method="post" enctype="multipart/form-data">
+        <label for="files">
+            <span class="icon">📁</span>Choose .doc or .docx files:
+        </label>
+        <input type="file" id="files" name="files" accept=".doc,.docx" multiple>
+        <br>
+        <input type="submit" value="Upload Files">
+    </form>
 
-<h1>Processed Files</h1>
-<div id="fileLinks"></div>
+    <div id="fileLinks"></div>
+</div>
 
 <script>
     document.getElementById('uploadForm').addEventListener('submit', function(event) {
