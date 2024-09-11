@@ -58,17 +58,17 @@ public class FileUploadController {
 
             document.getHeaderList().forEach(XWPFHeader::clearHeaderFooter);
             document.getFooterList().forEach(XWPFFooter::clearHeaderFooter);
-            // 遍历文档中的段落
+//            // 遍历文档中的段落
             List<XWPFParagraph> paragraphs = document.getParagraphs();
             int posId = paragraphs.size() - 1;
-//            document.removeBodyElement(posId);
-            if (!paragraphs.isEmpty()) {
-                XWPFParagraph paragraphToRemove = paragraphs.get(posId);
-                int elementPos = document.getPosOfParagraph(paragraphToRemove);
-                document.removeBodyElement(elementPos);
-            }
+////            document.removeBodyElement(posId);
+//            if (!paragraphs.isEmpty()) {
+//                XWPFParagraph paragraphToRemove = paragraphs.get(posId);
+//                int elementPos = document.getPosOfParagraph(paragraphToRemove);
+//                document.removeBodyElement(elementPos);
+//            }
 
-//            boolean imageFound = false;
+            boolean imageFound = false;
             // 从后往前遍历段落，查找最后一张图片
 //            for (int i = paragraphs.size() - 1; i >= 0 && !imageFound; i--) {
 //                XWPFParagraph paragraph = paragraphs.get(i);
@@ -88,6 +88,15 @@ public class FileUploadController {
 //                    }
 //                }
 //            }
+            XWPFParagraph paragraph = paragraphs.get(posId);
+            List<XWPFRun> runs = paragraph.getRuns();
+            for (int i = runs.size() - 1; i >= 0 ; i--) {
+                XWPFRun run = runs.get(i);
+                List<XWPFPicture> pictures = run.getEmbeddedPictures();
+                if (!pictures.isEmpty()) {
+                    paragraph.removeRun(i);
+                }
+            }
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             document.write(baos);
